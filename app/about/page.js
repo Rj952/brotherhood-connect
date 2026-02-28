@@ -25,9 +25,9 @@ export default function AboutPage() {
           <h1 className="font-display text-3xl font-black text-gold mb-6">About Brotherhood Connect</h1>
           <p className="text-base text-gray-400 leading-relaxed mb-4">
             Brotherhood Connect is a research-powered wellness and learning platform created specifically for
-            Black and brown men. Built on the foundation of 85+ years of evidence from the Harvard Study of
-            Adult Development and 33 peer-reviewed academic studies, this platform transforms rigorous research
-            into practical, culturally grounded tools for connection, health, and growth.
+            Black and brown men. Built on the foundation of decades of longitudinal research and 33 peer-reviewed
+            academic studies, this platform transforms rigorous research into practical, culturally grounded tools
+            for connection, health, and growth.
           </p>
           <p className="text-base text-gray-400 leading-relaxed mb-4">
             The platform is organised around seven pillars of male social wellbeing: Physical Health & Longevity,
@@ -37,7 +37,7 @@ export default function AboutPage() {
           </p>
           <p className="text-base text-gray-400 leading-relaxed mb-4">
             Special attention is given to the lived experiences, cultural strengths, and structural challenges
-            facing Black men in the United States and the Caribbean â including the rich traditions of yard
+            facing Black men in the United States and the Caribbean — including the rich traditions of yard
             culture, liming, reasoning, barbershop fellowship, and faith-based brotherhood that represent
             powerful models for social connection worldwide.
           </p>
@@ -47,12 +47,7 @@ export default function AboutPage() {
           </p>
 
           <div className="mt-8 pt-6 border-t border-white/[0.06] text-sm text-gray-500">
-            <p className="text-gold font-bold text-base">Created by Rohan Jowallah</p>
-            <p className="mt-2">
-              Senior Instructional Designer, University of Central Florida â¢ Inclusive Educator, UCCI â¢
-              AI Consultant, UTech Jamaica â¢ Honorary Advisor, Farquharson Institute of Public Affairs â¢
-              Fellow, AAC&U Faculty AI Institute â¢ Fellow, UK Higher Education Academy
-            </p>
+            <p className="text-gold font-bold text-base">Created by Dr. Rohan Jowallah</p>
             <p className="mt-2 italic">
               Author of <em>AI, Pedagogy and Inclusion: Shaping Pedagogy in a Changing World</em> (2025)
             </p>
