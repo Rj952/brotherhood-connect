@@ -78,7 +78,6 @@ export default function AuthPage() {
 
       {view === "login" ? (
         <form onSubmit={handleLogin} className="w-full max-w-md p-10 card-base border-gold/10 rounded-3xl text-center animate-fade-up relative z-10">
-          <div className="text-5xl mb-4">ð¤</div>
           <h1 className="font-display text-3xl font-black text-gold mb-2">Brotherhood Connect</h1>
           <p className="text-sm text-gray-400 mb-7 leading-relaxed">Sign in to access your brotherhood circle</p>
 
@@ -106,12 +105,11 @@ export default function AuthPage() {
           </p>
           <p className="mt-6 text-xs text-gray-600 leading-relaxed">
             Created by <strong className="text-gold">Rohan Jowallah</strong><br />
-            Built on 85+ years of Harvard research
+            Built on decades of research
           </p>
         </form>
       ) : (
         <form onSubmit={handleRegister} className="w-full max-w-md p-10 card-base border-gold/10 rounded-3xl text-center animate-fade-up relative z-10">
-          <div className="text-5xl mb-4">â</div>
           <h1 className="font-display text-3xl font-black text-gold mb-2">Request Access</h1>
           <p className="text-sm text-gray-400 mb-7 leading-relaxed">
             Brotherhood Connect is a private space. Tell us about yourself and we'll review your request.
