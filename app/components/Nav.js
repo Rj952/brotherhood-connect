@@ -31,10 +31,11 @@ export default function Nav({ user }) {
           className="font-display font-black text-lg text-gold cursor-pointer whitespace-nowrap"
           onClick={() => router.push("/dashboard")}
         >
-          ð¤ Brotherhood Connect
+          🤝 Brotherhood Connect
         </div>
         <div className="hidden md:flex gap-1">
           {link("/dashboard", "Pillars")}
+          {link("/groups", "Groups")}
           {link("/framework", "CONNECT")}
           {link("/about", "About")}
         </div>
