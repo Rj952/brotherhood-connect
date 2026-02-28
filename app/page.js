@@ -104,7 +104,7 @@ export default function AuthPage() {
             </button>
           </p>
           <p className="mt-6 text-xs text-gray-600 leading-relaxed">
-            Created by <strong className="text-gold">Rohan Jowallah</strong><br />
+            Created by <strong className="text-gold">Dr. Rohan Jowallah</strong><br />
             Built on decades of research
           </p>
         </form>
