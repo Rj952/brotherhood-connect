@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import Nav from "@/app/components/Nav";
+import Footer from "@/app/components/Footer";
 
 export default function GroupDetail({ params: paramsPromise }) {
   const params = use(paramsPromise);
@@ -27,24 +29,35 @@ export default function GroupDetail({ params: paramsPromise }) {
   const [vidUrl, setVidUrl] = useState("");
   const [postingVid, setPostingVid] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState(false);
 
   const isAdmin = user && user.role === "admin";
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (!d.user) router.push("/login");
-      else setUser(d.user);
-    });
+    fetch("/api/auth/me")
+      .then(r => r.json())
+      .then(d => {
+        if (!d.user) router.push("/");
+        else setUser(d.user);
+      })
+      .catch(() => router.push("/"));
   }, [router]);
 
   useEffect(() => {
     if (!user) return;
     fetch("/api/groups/" + params.id)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error("Failed to load group");
+        return r.json();
+      })
       .then(d => {
         setGroup(d.group);
         setMembers(d.members || []);
         setIsMember(d.isMember);
+        setLoading(false);
+      })
+      .catch(() => {
+        setPageError(true);
         setLoading(false);
       });
   }, [user, params.id]);
@@ -58,114 +71,143 @@ export default function GroupDetail({ params: paramsPromise }) {
   }, [isMember, isAdmin]);
 
   const loadPosts = async () => {
-    const res = await fetch("/api/posts?groupId=" + params.id);
-    const data = await res.json();
-    setPosts(data.posts || []);
+    try {
+      const res = await fetch("/api/posts?groupId=" + params.id);
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setPosts(data.posts || []);
+    } catch (e) { setPosts([]); }
   };
 
   const loadNews = async () => {
-    const res = await fetch("/api/groups/" + params.id + "/news");
-    const data = await res.json();
-    setNews(data.news || []);
+    try {
+      const res = await fetch("/api/groups/" + params.id + "/news");
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setNews(data.news || []);
+    } catch (e) { setNews([]); }
   };
 
   const loadVideos = async () => {
-    const res = await fetch("/api/groups/" + params.id + "/videos");
-    const data = await res.json();
-    setVideos(data.videos || []);
+    try {
+      const res = await fetch("/api/groups/" + params.id + "/videos");
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setVideos(data.videos || []);
+    } catch (e) { setVideos([]); }
   };
 
   const joinGroup = async () => {
-    await fetch("/api/groups/" + params.id, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "join" }),
-    });
-    setIsMember(true);
-    setMembers(prev => [...prev, { name: "You" }]);
+    try {
+      await fetch("/api/groups/" + params.id, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "join" }),
+      });
+      setIsMember(true);
+      setMembers(prev => [...prev, { name: "You" }]);
+    } catch (e) {}
   };
 
   const leaveGroup = async () => {
-    await fetch("/api/groups/" + params.id, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "leave" }),
-    });
-    setIsMember(false);
+    try {
+      await fetch("/api/groups/" + params.id, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "leave" }),
+      });
+      setIsMember(false);
+    } catch (e) {}
   };
 
   const createPost = async () => {
     if (!newPost.trim()) return;
-    await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ groupId: params.id, content: newPost }),
-    });
-    setNewPost("");
-    loadPosts();
+    try {
+      await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: params.id, content: newPost }),
+      });
+      setNewPost("");
+      loadPosts();
+    } catch (e) {}
   };
 
   const loadReplies = async (postId) => {
     if (expandedPost === postId) { setExpandedPost(null); return; }
-    const res = await fetch("/api/replies?postId=" + postId);
-    const data = await res.json();
-    setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
-    setExpandedPost(postId);
+    try {
+      const res = await fetch("/api/replies?postId=" + postId);
+      const data = await res.json();
+      setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
+      setExpandedPost(postId);
+    } catch (e) {}
   };
 
   const createReply = async (postId) => {
     if (!replyText[postId]?.trim()) return;
-    await fetch("/api/replies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId, content: replyText[postId] }),
-    });
-    setReplyText(prev => ({ ...prev, [postId]: "" }));
-    loadReplies(postId);
+    try {
+      await fetch("/api/replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, content: replyText[postId] }),
+      });
+      setReplyText(prev => ({ ...prev, [postId]: "" }));
+      loadReplies(postId);
+    } catch (e) {}
   };
 
   const createNews = async () => {
     if (!newsTitle.trim() || !newsContent.trim()) return;
     setPostingNews(true);
-    await fetch("/api/groups/" + params.id + "/news", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newsTitle, content: newsContent, youtubeUrl: newsYouTube, newsType }),
-    });
-    setNewsTitle(""); setNewsContent(""); setNewsYouTube(""); setNewsType("update");
+    try {
+      await fetch("/api/groups/" + params.id + "/news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newsTitle, content: newsContent, youtubeUrl: newsYouTube, newsType }),
+      });
+      setNewsTitle(""); setNewsContent(""); setNewsYouTube(""); setNewsType("update");
+      loadNews();
+    } catch (e) {}
     setPostingNews(false);
-    loadNews();
   };
 
   const deleteNews = async (newsId) => {
     if (!confirm("Delete this news item?")) return;
-    await fetch("/api/groups/" + params.id + "/news?newsId=" + newsId, { method: "DELETE" });
-    loadNews();
+    try {
+      await fetch("/api/groups/" + params.id + "/news?newsId=" + newsId, { method: "DELETE" });
+      loadNews();
+    } catch (e) {}
   };
 
   const createVideo = async () => {
     if (!vidTitle.trim() || !vidUrl.trim()) return;
     setPostingVid(true);
-    await fetch("/api/groups/" + params.id + "/videos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: vidTitle, description: vidDesc, youtubeUrl: vidUrl }),
-    });
-    setVidTitle(""); setVidDesc(""); setVidUrl("");
+    try {
+      await fetch("/api/groups/" + params.id + "/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: vidTitle, description: vidDesc, youtubeUrl: vidUrl }),
+      });
+      setVidTitle(""); setVidDesc(""); setVidUrl("");
+      loadVideos();
+    } catch (e) {}
     setPostingVid(false);
-    loadVideos();
   };
 
   const deleteVideo = async (videoId) => {
     if (!confirm("Delete this video?")) return;
-    await fetch("/api/groups/" + params.id + "/videos?videoId=" + videoId, { method: "DELETE" });
-    loadVideos();
+    try {
+      await fetch("/api/groups/" + params.id + "/videos?videoId=" + videoId, { method: "DELETE" });
+      loadVideos();
+    } catch (e) {}
   };
 
   const getYouTubeId = (url) => {
-    if (!url) return null;
-    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\\w-]{11})/);
-    return m ? m[1] : null;
+    try {
+      if (!url || typeof url !== "string") return null;
+      const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\w-]{11})/);
+      return m ? m[1] : null;
+    } catch (e) { return null; }
   };
 
   const typeIcon = (type) => {
@@ -181,19 +223,36 @@ export default function GroupDetail({ params: paramsPromise }) {
   };
 
   const timeAgo = (date) => {
-    const s = Math.floor((Date.now() - new Date(date)) / 1000);
-    if (s < 60) return "just now";
-    if (s < 3600) return Math.floor(s / 60) + "m ago";
-    if (s < 86400) return Math.floor(s / 3600) + "h ago";
-    return Math.floor(s / 86400) + "d ago";
+    try {
+      if (!date) return "";
+      const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+      if (isNaN(s) || s < 0) return "";
+      if (s < 60) return "just now";
+      if (s < 3600) return Math.floor(s / 60) + "m ago";
+      if (s < 86400) return Math.floor(s / 3600) + "h ago";
+      return Math.floor(s / 86400) + "d ago";
+    } catch (e) { return ""; }
   };
 
   if (loading) return <div style={{ minHeight: "100vh", background: "#1a1a2e", color: "#d4af37", display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
+
+  if (pageError) return (
+    <div style={{ minHeight: "100vh", background: "#1a1a2e" }}>
+      <Nav user={user} />
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "60px 20px", textAlign: "center" }}>
+        <h2 style={{ color: "#d4af37" }}>Unable to load group</h2>
+        <p style={{ color: "#aaa" }}>Please check your connection and try again.</p>
+        <button onClick={() => router.push("/dashboard")} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "10px 24px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 16 }}>Back to Dashboard</button>
+      </div>
+      <Footer />
+    </div>
+  );
 
   const tabs = ["forum", "news", "videos", "directory"];
 
   return (
     <div style={{ minHeight: "100vh", background: "#1a1a2e", color: "#e0e0e0" }}>
+      <Nav user={user} />
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px" }}>
         <h1 style={{ color: "#d4af37", fontSize: "1.8rem" }}>{group?.name}</h1>
         <p style={{ color: "#aaa" }}>{group?.description}</p>
@@ -343,6 +402,7 @@ export default function GroupDetail({ params: paramsPromise }) {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
