@@ -1,11 +1,10 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/app/components/Nav";
 import Footer from "@/app/components/Footer";
 
-export default function GroupDetail({ params: paramsPromise }) {
-  const params = use(paramsPromise);
+export default function GroupDetail({ params }) {
   const router = useRouter();
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
@@ -31,6 +30,7 @@ export default function GroupDetail({ params: paramsPromise }) {
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState(false);
 
+  const groupId = params?.id;
   const isAdmin = user && user.role === "admin";
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export default function GroupDetail({ params: paramsPromise }) {
   }, [router]);
 
   useEffect(() => {
-    if (!user) return;
-    fetch("/api/groups/" + params.id)
+    if (!user || !groupId) return;
+    fetch("/api/groups/" + groupId)
       .then(r => {
         if (!r.ok) throw new Error("Failed to load group");
         return r.json();
@@ -60,7 +60,7 @@ export default function GroupDetail({ params: paramsPromise }) {
         setPageError(true);
         setLoading(false);
       });
-  }, [user, params.id]);
+  }, [user, groupId]);
 
   useEffect(() => {
     if (isMember || isAdmin) {
@@ -72,7 +72,7 @@ export default function GroupDetail({ params: paramsPromise }) {
 
   const loadPosts = async () => {
     try {
-      const res = await fetch("/api/posts?groupId=" + params.id);
+      const res = await fetch("/api/posts?groupId=" + groupId);
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       setPosts(data.posts || []);
@@ -81,7 +81,7 @@ export default function GroupDetail({ params: paramsPromise }) {
 
   const loadNews = async () => {
     try {
-      const res = await fetch("/api/groups/" + params.id + "/news");
+      const res = await fetch("/api/groups/" + groupId + "/news");
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       setNews(data.news || []);
@@ -90,7 +90,7 @@ export default function GroupDetail({ params: paramsPromise }) {
 
   const loadVideos = async () => {
     try {
-      const res = await fetch("/api/groups/" + params.id + "/videos");
+      const res = await fetch("/api/groups/" + groupId + "/videos");
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
       setVideos(data.videos || []);
@@ -99,7 +99,7 @@ export default function GroupDetail({ params: paramsPromise }) {
 
   const joinGroup = async () => {
     try {
-      await fetch("/api/groups/" + params.id, {
+      await fetch("/api/groups/" + groupId, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "join" }),
@@ -111,7 +111,7 @@ export default function GroupDetail({ params: paramsPromise }) {
 
   const leaveGroup = async () => {
     try {
-      await fetch("/api/groups/" + params.id, {
+      await fetch("/api/groups/" + groupId, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "leave" }),
@@ -126,7 +126,7 @@ export default function GroupDetail({ params: paramsPromise }) {
       await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId: params.id, content: newPost }),
+        body: JSON.stringify({ groupId: groupId, content: newPost }),
       });
       setNewPost("");
       loadPosts();
@@ -160,7 +160,7 @@ export default function GroupDetail({ params: paramsPromise }) {
     if (!newsTitle.trim() || !newsContent.trim()) return;
     setPostingNews(true);
     try {
-      await fetch("/api/groups/" + params.id + "/news", {
+      await fetch("/api/groups/" + groupId + "/news", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newsTitle, content: newsContent, youtubeUrl: newsYouTube, newsType }),
@@ -174,7 +174,7 @@ export default function GroupDetail({ params: paramsPromise }) {
   const deleteNews = async (newsId) => {
     if (!confirm("Delete this news item?")) return;
     try {
-      await fetch("/api/groups/" + params.id + "/news?newsId=" + newsId, { method: "DELETE" });
+      await fetch("/api/groups/" + groupId + "/news?newsId=" + newsId, { method: "DELETE" });
       loadNews();
     } catch (e) {}
   };
@@ -183,7 +183,7 @@ export default function GroupDetail({ params: paramsPromise }) {
     if (!vidTitle.trim() || !vidUrl.trim()) return;
     setPostingVid(true);
     try {
-      await fetch("/api/groups/" + params.id + "/videos", {
+      await fetch("/api/groups/" + groupId + "/videos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: vidTitle, description: vidDesc, youtubeUrl: vidUrl }),
@@ -197,7 +197,7 @@ export default function GroupDetail({ params: paramsPromise }) {
   const deleteVideo = async (videoId) => {
     if (!confirm("Delete this video?")) return;
     try {
-      await fetch("/api/groups/" + params.id + "/videos?videoId=" + videoId, { method: "DELETE" });
+      await fetch("/api/groups/" + groupId + "/videos?videoId=" + videoId, { method: "DELETE" });
       loadVideos();
     } catch (e) {}
   };
@@ -273,7 +273,6 @@ export default function GroupDetail({ params: paramsPromise }) {
               ))}
             </div>
 
-            {/* FORUM TAB */}
             {tab === "forum" && (
               <div>
                 <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
@@ -311,7 +310,6 @@ export default function GroupDetail({ params: paramsPromise }) {
               </div>
             )}
 
-            {/* NEWS TAB */}
             {tab === "news" && (
               <div>
                 {isAdmin && (
@@ -351,11 +349,10 @@ export default function GroupDetail({ params: paramsPromise }) {
               </div>
             )}
 
-            {/* VIDEOS TAB */}
             {tab === "videos" && (
               <div>
                 <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
-                  <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>\uD83C\uDFAC Share a Video</h3>
+                  <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>{"\uD83C\uDFAC"} Share a Video</h3>
                   <input value={vidTitle} onChange={e => setVidTitle(e.target.value)} placeholder="Video title" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
                   <input value={vidDesc} onChange={e => setVidDesc(e.target.value)} placeholder="Description (optional)" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
                   <input value={vidUrl} onChange={e => setVidUrl(e.target.value)} placeholder="YouTube URL" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #555", borderRadius: 8, padding: 10, marginBottom: 8 }} />
@@ -375,7 +372,7 @@ export default function GroupDetail({ params: paramsPromise }) {
                           )}
                         </div>
                         {v.description && <p style={{ color: "#aaa", fontSize: "0.85rem", marginTop: 4 }}>{v.description}</p>}
-                        <p style={{ color: "#888", fontSize: "0.75rem", marginTop: 4 }}>by {v.poster_name || "Administrator"} \u00B7 {timeAgo(v.created_at)}</p>
+                        <p style={{ color: "#888", fontSize: "0.75rem", marginTop: 4 }}>by {v.poster_name || "Administrator"} {"\u00B7"} {timeAgo(v.created_at)}</p>
                       </div>
                     </div>
                   ))}
@@ -384,7 +381,6 @@ export default function GroupDetail({ params: paramsPromise }) {
               </div>
             )}
 
-            {/* DIRECTORY TAB */}
             {tab === "directory" && (
               <div>
                 <h3 style={{ color: "#d4af37" }}>Members ({members.length})</h3>
