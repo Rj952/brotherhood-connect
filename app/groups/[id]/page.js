@@ -1,40 +1,61 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import Nav from "@/app/components/Nav";
-import Footer from "@/app/components/Footer";
+import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
 
-export default function GroupDetailPage() {
+export default function GroupDetail({ params: paramsPromise }) {
+  const params = use(paramsPromise);
   const router = useRouter();
-  const params = useParams();
-  const [user, setUser] = useState(null);
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
-  const [posts, setPosts] = useState([]);
   const [isMember, setIsMember] = useState(false);
+  const [user, setUser] = useState(null);
   const [tab, setTab] = useState("forum");
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [posting, setPosting] = useState(false);
-  const [expandedPost, setExpandedPost] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState("");
+  const [replyText, setReplyText] = useState({});
   const [replies, setReplies] = useState({});
-  const [replyText, setReplyText] = useState("");
-  const [replying, setReplying] = useState(false);
+  const [expandedPost, setExpandedPost] = useState(null);
   const [news, setNews] = useState([]);
   const [newsTitle, setNewsTitle] = useState("");
   const [newsContent, setNewsContent] = useState("");
   const [newsYouTube, setNewsYouTube] = useState("");
   const [newsType, setNewsType] = useState("update");
   const [postingNews, setPostingNews] = useState(false);
+  const [videos, setVideos] = useState([]);
+  const [vidTitle, setVidTitle] = useState("");
+  const [vidDesc, setVidDesc] = useState("");
+  const [vidUrl, setVidUrl] = useState("");
+  const [postingVid, setPostingVid] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const loadGroup = async () => {
-    const res = await fetch("/api/groups/" + params.id);
-    const data = await res.json();
-    if (data.error) return router.push("/groups");
-    setGroup(data.group);
-    setMembers(data.members);
-    setIsMember(data.isMember);
-  };
+  const isAdmin = user && user.role === "admin";
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (!d.user) router.push("/login");
+      else setUser(d.user);
+    });
+  }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/groups/" + params.id)
+      .then(r => r.json())
+      .then(d => {
+        setGroup(d.group);
+        setMembers(d.members || []);
+        setIsMember(d.isMember);
+        setLoading(false);
+      });
+  }, [user, params.id]);
+
+  useEffect(() => {
+    if (isMember || isAdmin) {
+      loadPosts();
+      loadNews();
+      loadVideos();
+    }
+  }, [isMember, isAdmin]);
 
   const loadPosts = async () => {
     const res = await fetch("/api/posts?groupId=" + params.id);
@@ -48,52 +69,20 @@ export default function GroupDetailPage() {
     setNews(data.news || []);
   };
 
-  useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (!d.user) return router.push("/");
-      setUser(d.user);
-    });
-    loadGroup();
-    loadPosts();
-    loadNews();
-  }, []);
-
-  const createPost = async () => {
-    if (!newTitle.trim() || !newContent.trim()) return;
-    setPosting(true);
-    await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ groupId: parseInt(params.id), title: newTitle, content: newContent }),
-    });
-    setNewTitle("");
-    setNewContent("");
-    setPosting(false);
-    loadPosts();
+  const loadVideos = async () => {
+    const res = await fetch("/api/groups/" + params.id + "/videos");
+    const data = await res.json();
+    setVideos(data.videos || []);
   };
 
-  const loadReplies = async (postId) => {
-    if (expandedPost === postId) { setExpandedPost(null); return; }
-    setExpandedPost(postId);
-    const res = await fetch("/api/replies?postId=" + postId);
-    const data = await res.json();
-    setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
-  };
-
-  const submitReply = async (postId) => {
-    if (!replyText.trim()) return;
-    setReplying(true);
-    await fetch("/api/replies", {
+  const joinGroup = async () => {
+    await fetch("/api/groups/" + params.id, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId: postId, content: replyText }),
+      body: JSON.stringify({ action: "join" }),
     });
-    setReplyText("");
-    setReplying(false);
-    const res = await fetch("/api/replies?postId=" + postId);
-    const data = await res.json();
-    setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
-    loadPosts();
+    setIsMember(true);
+    setMembers(prev => [...prev, { name: "You" }]);
   };
 
   const leaveGroup = async () => {
@@ -102,17 +91,37 @@ export default function GroupDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "leave" }),
     });
-    router.push("/groups");
+    setIsMember(false);
   };
 
-  const joinGroup = async () => {
-    if (!group) return;
-    await fetch("/api/groups", {
+  const createPost = async () => {
+    if (!newPost.trim()) return;
+    await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ country: group.country }),
+      body: JSON.stringify({ groupId: params.id, content: newPost }),
     });
-    loadGroup();
+    setNewPost("");
+    loadPosts();
+  };
+
+  const loadReplies = async (postId) => {
+    if (expandedPost === postId) { setExpandedPost(null); return; }
+    const res = await fetch("/api/replies?postId=" + postId);
+    const data = await res.json();
+    setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
+    setExpandedPost(postId);
+  };
+
+  const createReply = async (postId) => {
+    if (!replyText[postId]?.trim()) return;
+    await fetch("/api/replies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, content: replyText[postId] }),
+    });
+    setReplyText(prev => ({ ...prev, [postId]: "" }));
+    loadReplies(postId);
   };
 
   const createNews = async () => {
@@ -123,10 +132,7 @@ export default function GroupDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newsTitle, content: newsContent, youtubeUrl: newsYouTube, newsType }),
     });
-    setNewsTitle("");
-    setNewsContent("");
-    setNewsYouTube("");
-    setNewsType("update");
+    setNewsTitle(""); setNewsContent(""); setNewsYouTube(""); setNewsType("update");
     setPostingNews(false);
     loadNews();
   };
@@ -137,16 +143,35 @@ export default function GroupDetailPage() {
     loadNews();
   };
 
+  const createVideo = async () => {
+    if (!vidTitle.trim() || !vidUrl.trim()) return;
+    setPostingVid(true);
+    await fetch("/api/groups/" + params.id + "/videos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: vidTitle, description: vidDesc, youtubeUrl: vidUrl }),
+    });
+    setVidTitle(""); setVidDesc(""); setVidUrl("");
+    setPostingVid(false);
+    loadVideos();
+  };
+
+  const deleteVideo = async (videoId) => {
+    if (!confirm("Delete this video?")) return;
+    await fetch("/api/groups/" + params.id + "/videos?videoId=" + videoId, { method: "DELETE" });
+    loadVideos();
+  };
+
   const getYouTubeId = (url) => {
     if (!url) return null;
-    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\w-]{11})/);
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\\w-]{11})/);
     return m ? m[1] : null;
   };
 
   const typeIcon = (type) => {
-    if (type === "video") return "🎬";
-    if (type === "announcement") return "📢";
-    return "📰";
+    if (type === "video") return "\uD83C\uDFAC";
+    if (type === "announcement") return "\uD83D\uDCE2";
+    return "\uD83D\uDCF0";
   };
 
   const typeColor = (type) => {
@@ -163,213 +188,161 @@ export default function GroupDetailPage() {
     return Math.floor(s / 86400) + "d ago";
   };
 
-  if (!user || !group) return null;
+  if (loading) return <div style={{ minHeight: "100vh", background: "#1a1a2e", color: "#d4af37", display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
 
-  const isAdmin = user.role === "admin";
+  const tabs = ["forum", "news", "videos", "directory"];
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #1a1520 50%, #0a0a0f 100%)" }}>
-      <Nav user={user} />
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <button onClick={() => router.push("/groups")}
-              className="text-gray-500 text-sm mb-2 cursor-pointer bg-transparent border-none hover:text-gold transition-all">
-              ← All Groups
-            </button>
-            <h1 className="text-3xl font-display font-black text-gold">{group.name}</h1>
-            <p className="text-gray-400 mt-1">{group.description}</p>
-            <p className="text-gray-500 text-sm mt-2">{members.length} member{members.length !== 1 ? "s" : ""}</p>
-          </div>
-          {isMember ? (
-            <button onClick={leaveGroup}
-              className="px-4 py-2 text-xs font-semibold text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg cursor-pointer hover:bg-red-400/20 transition-all">
-              Leave Group
-            </button>
-          ) : (
-            <button onClick={joinGroup}
-              className="px-5 py-2 text-sm font-semibold text-black bg-gold border-none rounded-lg cursor-pointer hover:bg-gold/80 transition-all">
-              Join Group
-            </button>
-          )}
-        </div>
+    <div style={{ minHeight: "100vh", background: "#1a1a2e", color: "#e0e0e0" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px" }}>
+        <h1 style={{ color: "#d4af37", fontSize: "1.8rem" }}>{group?.name}</h1>
+        <p style={{ color: "#aaa" }}>{group?.description}</p>
+        <p style={{ color: "#888", fontSize: "0.85rem" }}>{members.length} members</p>
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-8 border-b border-white/5 pb-1">
-          {["forum", "news", "directory"].map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg cursor-pointer border-none transition-all ${
-                tab === t ? "text-gold bg-gold/10 border-b-2 border-gold" : "text-gray-500 bg-transparent hover:text-gray-300"
-              }`}>
-              {t === "forum" ? "Forum" : t === "news" ? "News" : "Directory"}
-            </button>
-          ))}
-        </div>
+        {!isMember && !isAdmin && (
+          <button onClick={joinGroup} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "10px 24px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 8 }}>Join Group</button>
+        )}
+        {isMember && (
+          <button onClick={leaveGroup} style={{ background: "transparent", color: "#f87171", border: "1px solid #f87171", padding: "8px 20px", borderRadius: 8, cursor: "pointer", marginTop: 8, fontSize: "0.85rem" }}>Leave Group</button>
+        )}
 
-        {/* Forum Tab */}
-        {tab === "forum" && (
-          <div>
-            {isMember && (
-              <div className="p-5 rounded-2xl border border-white/10 mb-8" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <h3 className="text-white font-bold mb-3">Start a Discussion</h3>
-                <input type="text" placeholder="Title" value={newTitle}
-                  onChange={e => setNewTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
-                <textarea placeholder="Share your thoughts..." value={newContent}
-                  onChange={e => setNewContent(e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none resize-none" />
-                <button onClick={createPost} disabled={posting || !newTitle.trim() || !newContent.trim()}
-                  className="px-5 py-2 text-sm font-semibold text-black bg-gold border-none rounded-lg cursor-pointer hover:bg-gold/80 transition-all disabled:opacity-50">
-                  {posting ? "Posting..." : "Post"}
-                </button>
-              </div>
-            )}
+        {(isMember || isAdmin) && (
+          <>
+            <div style={{ display: "flex", gap: 8, margin: "24px 0 16px", borderBottom: "1px solid #333", paddingBottom: 8 }}>
+              {tabs.map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 20px", borderRadius: 20, border: "none", cursor: "pointer", fontWeight: tab === t ? "bold" : "normal", background: tab === t ? "#d4af37" : "transparent", color: tab === t ? "#1a1a2e" : "#aaa", textTransform: "capitalize" }}>{t}</button>
+              ))}
+            </div>
 
-            {posts.length === 0 ? (
-              <p className="text-gray-500 text-center py-12">No discussions yet. Be the first to start one!</p>
-            ) : (
-              <div className="space-y-4">
+            {/* FORUM TAB */}
+            {tab === "forum" && (
+              <div>
+                <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
+                  <textarea value={newPost} onChange={e => setNewPost(e.target.value)} placeholder="Share with your brothers..." rows={3} style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 12, resize: "vertical" }} />
+                  <button onClick={createPost} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 8 }}>Post</button>
+                </div>
                 {posts.map(p => (
-                  <div key={p.id} className="p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all"
-                    style={{ background: "rgba(255,255,255,0.02)" }}>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-white font-bold">{p.title}</h3>
-                        <p className="text-gray-500 text-xs mt-1">by {p.author_name} · {timeAgo(p.created_at)}</p>
-                      </div>
-                      <button onClick={() => loadReplies(p.id)}
-                        className="text-gray-400 text-xs bg-transparent border border-white/10 px-3 py-1 rounded-lg cursor-pointer hover:text-gold hover:border-gold/20 transition-all">
-                        {p.reply_count} {p.reply_count === 1 ? "reply" : "replies"}
-                      </button>
+                  <div key={p.id} style={{ background: "#252540", borderRadius: 12, padding: 16, marginBottom: 12, border: "1px solid #333" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <strong style={{ color: "#d4af37" }}>{p.author_name || "Member"}</strong>
+                      <span style={{ color: "#888", fontSize: "0.8rem" }}>{timeAgo(p.created_at)}</span>
                     </div>
-                    <p className="text-gray-300 mt-3 text-sm leading-relaxed">{p.content}</p>
-
+                    <p style={{ marginTop: 8, lineHeight: 1.5 }}>{p.content}</p>
+                    <button onClick={() => loadReplies(p.id)} style={{ background: "transparent", border: "none", color: "#d4af37", cursor: "pointer", fontSize: "0.85rem", marginTop: 8 }}>
+                      {expandedPost === p.id ? "Hide Replies" : "Replies (" + (p.reply_count || 0) + ")"}
+                    </button>
                     {expandedPost === p.id && (
-                      <div className="mt-4 pt-4 border-t border-white/5">
+                      <div style={{ marginTop: 12, paddingLeft: 16, borderLeft: "2px solid #d4af37" }}>
                         {(replies[p.id] || []).map(r => (
-                          <div key={r.id} className="mb-3 pl-4 border-l-2 border-gold/20">
-                            <p className="text-gray-300 text-sm">{r.content}</p>
-                            <p className="text-gray-500 text-xs mt-1">{r.author_name} · {timeAgo(r.created_at)}</p>
+                          <div key={r.id} style={{ marginBottom: 8 }}>
+                            <strong style={{ color: "#d4af37", fontSize: "0.85rem" }}>{r.author_name}</strong>
+                            <span style={{ color: "#888", fontSize: "0.75rem", marginLeft: 8 }}>{timeAgo(r.created_at)}</span>
+                            <p style={{ fontSize: "0.9rem", marginTop: 2 }}>{r.content}</p>
                           </div>
                         ))}
-                        {isMember && (
-                          <div className="flex gap-2 mt-3">
-                            <input type="text" placeholder="Write a reply..." value={replyText}
-                              onChange={e => setReplyText(e.target.value)}
-                              onKeyDown={e => e.key === "Enter" && submitReply(p.id)}
-                              className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
-                            <button onClick={() => submitReply(p.id)} disabled={replying}
-                              className="px-4 py-2 text-xs font-semibold text-black bg-gold border-none rounded-lg cursor-pointer hover:bg-gold/80 disabled:opacity-50">
-                              Reply
-                            </button>
-                          </div>
-                        )}
+                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                          <input value={replyText[p.id] || ""} onChange={e => setReplyText(prev => ({ ...prev, [p.id]: e.target.value }))} placeholder="Reply..." style={{ flex: 1, background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 8 }} />
+                          <button onClick={() => createReply(p.id)} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 16px", borderRadius: 8, fontWeight: "bold", cursor: "pointer" }}>Reply</button>
+                        </div>
                       </div>
                     )}
                   </div>
                 ))}
+                {!posts.length && <p style={{ textAlign: "center", color: "#888" }}>No posts yet. Start the conversation!</p>}
               </div>
             )}
-          </div>
-        )}
 
-        {/* News Tab */}
-        {tab === "news" && (
-          <div>
-            {isAdmin && (
-              <div className="p-5 rounded-2xl border border-white/10 mb-8" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <h3 className="text-white font-bold mb-3">Post News or Update</h3>
-                <div className="flex gap-2 mb-3">
-                  {[{v:"update",l:"Update"},{v:"announcement",l:"Announcement"},{v:"video",l:"Video"}].map(t => (
-                    <button key={t.v} onClick={() => setNewsType(t.v)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer border transition-all ${
-                        newsType === t.v ? "text-gold bg-gold/15 border-gold/30" : "text-gray-500 bg-transparent border-white/10 hover:text-gray-300"
-                      }`}>
-                      {t.l}
-                    </button>
+            {/* NEWS TAB */}
+            {tab === "news" && (
+              <div>
+                {isAdmin && (
+                  <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
+                    <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>Post News or Update</h3>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      {["update", "announcement", "video"].map(t => (
+                        <button key={t} onClick={() => setNewsType(t)} style={{ padding: "6px 14px", borderRadius: 16, border: "none", cursor: "pointer", background: newsType === t ? typeColor(t) : "#333", color: newsType === t ? "#fff" : "#aaa", textTransform: "capitalize", fontSize: "0.85rem" }}>{t}</button>
+                      ))}
+                    </div>
+                    <input value={newsTitle} onChange={e => setNewsTitle(e.target.value)} placeholder="Title" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
+                    <textarea value={newsContent} onChange={e => setNewsContent(e.target.value)} placeholder="Write your news or update..." rows={3} style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, resize: "vertical", marginBottom: 8 }} />
+                    <input value={newsYouTube} onChange={e => setNewsYouTube(e.target.value)} placeholder="YouTube URL (optional)" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #555", borderRadius: 8, padding: 10, marginBottom: 8 }} />
+                    <button onClick={createNews} disabled={postingNews} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer" }}>{postingNews ? "Posting..." : "Publish"}</button>
+                  </div>
+                )}
+                {news.map(n => (
+                  <div key={n.id} style={{ background: "#252540", borderRadius: 12, padding: 16, marginBottom: 12, border: "1px solid #333" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>{typeIcon(n.news_type)}</span>
+                        <span style={{ background: typeColor(n.news_type), color: "#fff", padding: "2px 10px", borderRadius: 12, fontSize: "0.75rem" }}>{n.news_type}</span>
+                      </div>
+                      {isAdmin && <button onClick={() => deleteNews(n.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem" }}>Delete</button>}
+                    </div>
+                    <h3 style={{ margin: "8px 0 4px", color: "#e0e0e0" }}>{n.title}</h3>
+                    <p style={{ color: "#888", fontSize: "0.8rem" }}>by {n.author_name || "Administrator"} \u00B7 {timeAgo(n.created_at)}</p>
+                    <p style={{ marginTop: 8, lineHeight: 1.6 }}>{n.content}</p>
+                    {getYouTubeId(n.youtube_url) && (
+                      <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden" }}>
+                        <iframe width="100%" height="315" src={"https://www.youtube.com/embed/" + getYouTubeId(n.youtube_url)} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {!news.length && <p style={{ textAlign: "center", color: "#888" }}>No news yet. {isAdmin ? "Post the first update above!" : "Check back soon!"}</p>}
+              </div>
+            )}
+
+            {/* VIDEOS TAB */}
+            {tab === "videos" && (
+              <div>
+                <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
+                  <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>\uD83C\uDFAC Share a Video</h3>
+                  <input value={vidTitle} onChange={e => setVidTitle(e.target.value)} placeholder="Video title" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
+                  <input value={vidDesc} onChange={e => setVidDesc(e.target.value)} placeholder="Description (optional)" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
+                  <input value={vidUrl} onChange={e => setVidUrl(e.target.value)} placeholder="YouTube URL" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #555", borderRadius: 8, padding: 10, marginBottom: 8 }} />
+                  <button onClick={createVideo} disabled={postingVid} style={{ background: "#a78bfa", color: "#fff", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer" }}>{postingVid ? "Sharing..." : "Share Video"}</button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+                  {videos.map(v => (
+                    <div key={v.id} style={{ background: "#252540", borderRadius: 12, overflow: "hidden", border: "1px solid #333" }}>
+                      {getYouTubeId(v.youtube_url) && (
+                        <iframe width="100%" height="180" src={"https://www.youtube.com/embed/" + getYouTubeId(v.youtube_url)} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                      )}
+                      <div style={{ padding: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                          <h4 style={{ margin: 0, color: "#e0e0e0", fontSize: "0.95rem" }}>{v.title}</h4>
+                          {(isAdmin || (user && v.user_id === user.userId)) && (
+                            <button onClick={() => deleteVideo(v.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.8rem", whiteSpace: "nowrap" }}>Delete</button>
+                          )}
+                        </div>
+                        {v.description && <p style={{ color: "#aaa", fontSize: "0.85rem", marginTop: 4 }}>{v.description}</p>}
+                        <p style={{ color: "#888", fontSize: "0.75rem", marginTop: 4 }}>by {v.poster_name || "Administrator"} \u00B7 {timeAgo(v.created_at)}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <input type="text" placeholder="Title" value={newsTitle}
-                  onChange={e => setNewsTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
-                <textarea placeholder="Write your news or update..." value={newsContent}
-                  onChange={e => setNewsContent(e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none resize-none" />
-                <input type="text" placeholder="YouTube URL (optional)" value={newsYouTube}
-                  onChange={e => setNewsYouTube(e.target.value)}
-                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
-                <button onClick={createNews} disabled={postingNews || !newsTitle.trim() || !newsContent.trim()}
-                  className="px-5 py-2 text-sm font-semibold text-black bg-gold border-none rounded-lg cursor-pointer hover:bg-gold/80 transition-all disabled:opacity-50">
-                  {postingNews ? "Publishing..." : "Publish"}
-                </button>
+                {!videos.length && <p style={{ textAlign: "center", color: "#888", marginTop: 20 }}>No videos shared yet. Be the first to share one!</p>}
               </div>
             )}
 
-            {news.length === 0 ? (
-              <p className="text-gray-500 text-center py-12">No news yet. {isAdmin ? "Post the first update above!" : "Check back soon for updates."}</p>
-            ) : (
-              <div className="space-y-4">
-                {news.map(n => (
-                  <div key={n.id} className="p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all"
-                    style={{ background: "rgba(255,255,255,0.02)" }}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontSize: "1.2rem" }}>{typeIcon(n.news_type)}</span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                          style={{ background: typeColor(n.news_type) + "20", color: typeColor(n.news_type) }}>
-                          {n.news_type}
-                        </span>
-                      </div>
-                      {isAdmin && (
-                        <button onClick={() => deleteNews(n.id)}
-                          className="text-red-400/60 text-xs bg-transparent border-none cursor-pointer hover:text-red-400 transition-all">
-                          Delete
-                        </button>
-                      )}
+            {/* DIRECTORY TAB */}
+            {tab === "directory" && (
+              <div>
+                <h3 style={{ color: "#d4af37" }}>Members ({members.length})</h3>
+                {members.map((m, i) => (
+                  <div key={i} style={{ background: "#252540", borderRadius: 12, padding: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 12, border: "1px solid #333" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#d4af37", display: "flex", alignItems: "center", justifyContent: "center", color: "#1a1a2e", fontWeight: "bold" }}>{(m.name || "?")[0]}</div>
+                    <div>
+                      <strong style={{ color: "#e0e0e0" }}>{m.name}</strong>
+                      {m.country && <p style={{ color: "#888", fontSize: "0.8rem", margin: 0 }}>{m.country}</p>}
                     </div>
-                    <h3 className="text-white font-bold text-lg mt-2">{n.title}</h3>
-                    <p className="text-gray-500 text-xs mt-1">by {n.author_name || "Admin"} · {timeAgo(n.created_at)}</p>
-                    <p className="text-gray-300 mt-3 text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
-                    {getYouTubeId(n.youtube_url) && (
-                      <div className="mt-4 rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
-                        <iframe
-                          src={"https://www.youtube.com/embed/" + getYouTubeId(n.youtube_url)}
-                          className="w-full h-full border-none"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </>
         )}
-
-        {/* Directory Tab */}
-        {tab === "directory" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {members.map(m => (
-              <div key={m.id} className="p-4 rounded-xl border border-white/5"
-                style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ background: "rgba(212,175,55,0.15)", color: "#d4af37" }}>
-                    {m.name?.charAt(0)?.toUpperCase() || "?"}
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{m.name}</p>
-                    <p className="text-gray-500 text-xs">{group.country} · Joined {timeAgo(m.joined_at)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 }
