@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;7009family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --gold: $D4@843;
+  --gold-dim: rgba(212, 168, 67, 0.15);
+  --deep: #0A0A0F;
+  --card: #141420;
+  --elevated: #1C1C2E;
+}
+
+body {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  background: var(--deep);
+  color: #F0EDE6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Noise texture */
+.app-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Custom Component Styles ─────────────────── */
+
+.btn-gold {
+  @apply w-full py-3.5 px-6 font-bold text-base rounded-lg cursor-pointer transition-all duration-300;
+  background: linear-gradient(135deg, #D4A843 0%, #C09430 100%);
+  color: #0A0A0F;
+  border: none;
+  letter-spacing: 0.03em;
+}
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(212, 168, 67, 0.3);
+}
+.btn-gold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.card-base {
+  @apply rounded-2xl border;
+  background: var(--card);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.input-field {
+  @apply w-full py-3 px-4 rounded-lg text-base outline-none transition-all duration-300;
+  background: #1A1A2A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #F0EDE6;
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+.input-field:focus {
+  border-color: var(--gold);
+}
+.input-field::placeholder {
+  color: #6B6780;
+}
+
+.font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Animations ──────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.7s ease-out both;
+}
+.animate-fade-up-1 { animation-delay: 0.1s; }
+.animate-fade-up-2 { animation-delay: 0.2s; }
+.animate-fade-up-3 { animation-delay: 0.3s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
