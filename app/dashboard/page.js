@@ -58,10 +58,10 @@ export default function DashboardPage() {
             </p>
             <div className="flex justify-center gap-12 flex-wrap animate-fade-up animate-fade-up-3">
               {[
-                ["85+", "Years of Harvard research"],
                 ["33", "Peer-reviewed studies"],
                 ["7", "Pillars of wellbeing"],
                 ["15", "Evidence-based strategies"],
+                ["1", "Mission: your wellbeing"],
               ].map(([num, label]) => (
                 <div key={num} className="text-center">
                   <div className="font-display text-4xl font-black text-gold">{num}</div>
@@ -87,7 +87,7 @@ export default function DashboardPage() {
                     <strong className="font-display text-base font-black" style={{ color: p.color }}>{p.stat}</strong>
                     {p.statLabel}
                   </div>
-                  <div className="absolute bottom-6 right-6 text-lg text-gray-600 group-hover:text-gold group-hover:translate-x-1 transition-all">â</div>
+                  <div className="absolute bottom-6 right-6 text-lg text-gray-600 group-hover:text-gold group-hover:translate-x-1 transition-all">→</div>
                 </div>
               ))}
             </div>
@@ -98,7 +98,7 @@ export default function DashboardPage() {
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-20 relative z-10">
           <button onClick={closePillar}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-400 bg-white/[0.03] border border-white/[0.06] rounded-lg cursor-pointer hover:text-gold hover:border-gold/20 transition-all mb-8">
-            â Back to Pillars
+            ← Back to Pillars
           </button>
           <div className="text-5xl mb-4">{pillar.icon}</div>
           <h1 className="font-display text-3xl font-black mb-2">{pillar.title}</h1>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
                     className={`w-5.5 h-5.5 min-w-[22px] min-h-[22px] rounded-md border-2 flex items-center justify-center text-xs cursor-pointer transition-all mt-0.5 ${
                       checked[key] ? "border-gold bg-gold text-deep" : "border-gray-500 text-transparent"
                     }`}>
-                    {checked[key] ? "â" : ""}
+                    {checked[key] ? "✓" : ""}
                   </div>
                   <div className="text-sm text-gray-400 leading-snug">{pr}</div>
                 </div>
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-gold/10 border border-gold/10 rounded-2xl p-6">
-            <div className="text-xs font-bold tracking-widest uppercase text-gold mb-2.5">ðª Reflection Question</div>
+            <div className="text-xs font-bold tracking-widest uppercase text-gold mb-2.5">🪞 Reflection Question</div>
             <p className="font-display text-lg italic leading-relaxed">{pillar.reflection}</p>
           </div>
         </div>
