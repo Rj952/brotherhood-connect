@@ -27,8 +27,13 @@ export default function GroupDetailPage() {
     if (data.error) return router.push("/groups");
     setGroup(data.group);
     setMembers(data.members);
-    setPosts(data.posts);
     setIsMember(data.isMember);
+  };
+
+  const loadPosts = async () => {
+    const res = await fetch("/api/posts?groupId=" + params.id);
+    const data = await res.json();
+    setPosts(data.posts || []);
   };
 
   useEffect(() => {
@@ -37,6 +42,7 @@ export default function GroupDetailPage() {
       setUser(d.user);
     });
     loadGroup();
+    loadPosts();
   }, []);
 
   const createPost = async () => {
@@ -45,18 +51,18 @@ export default function GroupDetailPage() {
     await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ group_id: parseInt(params.id), title: newTitle, content: newContent }),
+      body: JSON.stringify({ groupId: parseInt(params.id), title: newTitle, content: newContent }),
     });
     setNewTitle("");
     setNewContent("");
     setPosting(false);
-    loadGroup();
+    loadPosts();
   };
 
   const loadReplies = async (postId) => {
     if (expandedPost === postId) { setExpandedPost(null); return; }
     setExpandedPost(postId);
-    const res = await fetch("/api/replies?post_id=" + postId);
+    const res = await fetch("/api/replies?postId=" + postId);
     const data = await res.json();
     setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
   };
@@ -67,18 +73,22 @@ export default function GroupDetailPage() {
     await fetch("/api/replies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ post_id: postId, content: replyText }),
+      body: JSON.stringify({ postId: postId, content: replyText }),
     });
     setReplyText("");
     setReplying(false);
-    const res = await fetch("/api/replies?post_id=" + postId);
+    const res = await fetch("/api/replies?postId=" + postId);
     const data = await res.json();
     setReplies(prev => ({ ...prev, [postId]: data.replies || [] }));
-    loadGroup();
+    loadPosts();
   };
 
   const leaveGroup = async () => {
-    await fetch("/api/groups/" + params.id, { method: "DELETE" });
+    await fetch("/api/groups/" + params.id, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "leave" }),
+    });
     router.push("/groups");
   };
 
@@ -222,7 +232,7 @@ export default function GroupDetailPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">{m.name}</p>
-                    <p className="text-gray-500 text-xs">{m.country || group.country} \u00b7 Joined {timeAgo(m.joined_at)}</p>
+                    <p className="text-gray-500 text-xs">{group.country} \u00b7 Joined {timeAgo(m.joined_at)}</p>
                   </div>
                 </div>
               </div>
