@@ -121,7 +121,7 @@ export default function GroupDetailPage() {
           <div>
             <button onClick={() => router.push("/groups")}
               className="text-gray-500 text-sm mb-2 cursor-pointer bg-transparent border-none hover:text-gold transition-all">
-              \u2190 All Groups
+              ← All Groups
             </button>
             <h1 className="text-3xl font-display font-black text-gold">{group.name}</h1>
             <p className="text-gray-400 mt-1">{group.description}</p>
@@ -181,7 +181,7 @@ export default function GroupDetailPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-white font-bold">{p.title}</h3>
-                        <p className="text-gray-500 text-xs mt-1">by {p.author_name} \u00b7 {timeAgo(p.created_at)}</p>
+                        <p className="text-gray-500 text-xs mt-1">by {p.author_name} · {timeAgo(p.created_at)}</p>
                       </div>
                       <button onClick={() => loadReplies(p.id)}
                         className="text-gray-400 text-xs bg-transparent border border-white/10 px-3 py-1 rounded-lg cursor-pointer hover:text-gold hover:border-gold/20 transition-all">
@@ -195,7 +195,7 @@ export default function GroupDetailPage() {
                         {(replies[p.id] || []).map(r => (
                           <div key={r.id} className="mb-3 pl-4 border-l-2 border-gold/20">
                             <p className="text-gray-300 text-sm">{r.content}</p>
-                            <p className="text-gray-500 text-xs mt-1">{r.author_name} \u00b7 {timeAgo(r.created_at)}</p>
+                            <p className="text-gray-500 text-xs mt-1">{r.author_name} · {timeAgo(r.created_at)}</p>
                           </div>
                         ))}
                         {isMember && (
@@ -232,7 +232,7 @@ export default function GroupDetailPage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">{m.name}</p>
-                    <p className="text-gray-500 text-xs">{group.country} \u00b7 Joined {timeAgo(m.joined_at)}</p>
+                    <p className="text-gray-500 text-xs">{group.country} · Joined {timeAgo(m.joined_at)}</p>
                   </div>
                 </div>
               </div>
