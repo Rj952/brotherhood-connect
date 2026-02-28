@@ -20,6 +20,12 @@ export default function GroupDetailPage() {
   const [replies, setReplies] = useState({});
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
+  const [news, setNews] = useState([]);
+  const [newsTitle, setNewsTitle] = useState("");
+  const [newsContent, setNewsContent] = useState("");
+  const [newsYouTube, setNewsYouTube] = useState("");
+  const [newsType, setNewsType] = useState("update");
+  const [postingNews, setPostingNews] = useState(false);
 
   const loadGroup = async () => {
     const res = await fetch("/api/groups/" + params.id);
@@ -36,6 +42,12 @@ export default function GroupDetailPage() {
     setPosts(data.posts || []);
   };
 
+  const loadNews = async () => {
+    const res = await fetch("/api/groups/" + params.id + "/news");
+    const data = await res.json();
+    setNews(data.news || []);
+  };
+
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
       if (!d.user) return router.push("/");
@@ -43,6 +55,7 @@ export default function GroupDetailPage() {
     });
     loadGroup();
     loadPosts();
+    loadNews();
   }, []);
 
   const createPost = async () => {
@@ -102,6 +115,46 @@ export default function GroupDetailPage() {
     loadGroup();
   };
 
+  const createNews = async () => {
+    if (!newsTitle.trim() || !newsContent.trim()) return;
+    setPostingNews(true);
+    await fetch("/api/groups/" + params.id + "/news", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newsTitle, content: newsContent, youtubeUrl: newsYouTube, newsType }),
+    });
+    setNewsTitle("");
+    setNewsContent("");
+    setNewsYouTube("");
+    setNewsType("update");
+    setPostingNews(false);
+    loadNews();
+  };
+
+  const deleteNews = async (newsId) => {
+    if (!confirm("Delete this news item?")) return;
+    await fetch("/api/groups/" + params.id + "/news?newsId=" + newsId, { method: "DELETE" });
+    loadNews();
+  };
+
+  const getYouTubeId = (url) => {
+    if (!url) return null;
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\w-]{11})/);
+    return m ? m[1] : null;
+  };
+
+  const typeIcon = (type) => {
+    if (type === "video") return "🎬";
+    if (type === "announcement") return "📢";
+    return "📰";
+  };
+
+  const typeColor = (type) => {
+    if (type === "video") return "#a78bfa";
+    if (type === "announcement") return "#f97316";
+    return "#d4af37";
+  };
+
   const timeAgo = (date) => {
     const s = Math.floor((Date.now() - new Date(date)) / 1000);
     if (s < 60) return "just now";
@@ -111,6 +164,8 @@ export default function GroupDetailPage() {
   };
 
   if (!user || !group) return null;
+
+  const isAdmin = user.role === "admin";
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #1a1520 50%, #0a0a0f 100%)" }}>
@@ -142,12 +197,12 @@ export default function GroupDetailPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-8 border-b border-white/5 pb-1">
-          {["forum", "directory"].map(t => (
+          {["forum", "news", "directory"].map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2.5 text-sm font-semibold rounded-t-lg cursor-pointer border-none transition-all ${
                 tab === t ? "text-gold bg-gold/10 border-b-2 border-gold" : "text-gray-500 bg-transparent hover:text-gray-300"
               }`}>
-              {t === "forum" ? "Forum" : "Directory"}
+              {t === "forum" ? "Forum" : t === "news" ? "News" : "Directory"}
             </button>
           ))}
         </div>
@@ -210,6 +265,80 @@ export default function GroupDetailPage() {
                             </button>
                           </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* News Tab */}
+        {tab === "news" && (
+          <div>
+            {isAdmin && (
+              <div className="p-5 rounded-2xl border border-white/10 mb-8" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <h3 className="text-white font-bold mb-3">Post News or Update</h3>
+                <div className="flex gap-2 mb-3">
+                  {[{v:"update",l:"Update"},{v:"announcement",l:"Announcement"},{v:"video",l:"Video"}].map(t => (
+                    <button key={t.v} onClick={() => setNewsType(t.v)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg cursor-pointer border transition-all ${
+                        newsType === t.v ? "text-gold bg-gold/15 border-gold/30" : "text-gray-500 bg-transparent border-white/10 hover:text-gray-300"
+                      }`}>
+                      {t.l}
+                    </button>
+                  ))}
+                </div>
+                <input type="text" placeholder="Title" value={newsTitle}
+                  onChange={e => setNewsTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
+                <textarea placeholder="Write your news or update..." value={newsContent}
+                  onChange={e => setNewsContent(e.target.value)} rows={3}
+                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none resize-none" />
+                <input type="text" placeholder="YouTube URL (optional)" value={newsYouTube}
+                  onChange={e => setNewsYouTube(e.target.value)}
+                  className="w-full px-4 py-2.5 mb-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-gold/40 focus:outline-none" />
+                <button onClick={createNews} disabled={postingNews || !newsTitle.trim() || !newsContent.trim()}
+                  className="px-5 py-2 text-sm font-semibold text-black bg-gold border-none rounded-lg cursor-pointer hover:bg-gold/80 transition-all disabled:opacity-50">
+                  {postingNews ? "Publishing..." : "Publish"}
+                </button>
+              </div>
+            )}
+
+            {news.length === 0 ? (
+              <p className="text-gray-500 text-center py-12">No news yet. {isAdmin ? "Post the first update above!" : "Check back soon for updates."}</p>
+            ) : (
+              <div className="space-y-4">
+                {news.map(n => (
+                  <div key={n.id} className="p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all"
+                    style={{ background: "rgba(255,255,255,0.02)" }}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontSize: "1.2rem" }}>{typeIcon(n.news_type)}</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: typeColor(n.news_type) + "20", color: typeColor(n.news_type) }}>
+                          {n.news_type}
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <button onClick={() => deleteNews(n.id)}
+                          className="text-red-400/60 text-xs bg-transparent border-none cursor-pointer hover:text-red-400 transition-all">
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <h3 className="text-white font-bold text-lg mt-2">{n.title}</h3>
+                    <p className="text-gray-500 text-xs mt-1">by {n.author_name || "Admin"} · {timeAgo(n.created_at)}</p>
+                    <p className="text-gray-300 mt-3 text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
+                    {getYouTubeId(n.youtube_url) && (
+                      <div className="mt-4 rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                        <iframe
+                          src={"https://www.youtube.com/embed/" + getYouTubeId(n.youtube_url)}
+                          className="w-full h-full border-none"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
                       </div>
                     )}
                   </div>
