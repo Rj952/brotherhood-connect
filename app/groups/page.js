@@ -70,7 +70,7 @@ export default function GroupsPage() {
             Brotherhood Groups
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Connect with brothers around the world. Join your country\u2019s group to access the forum and member directory.
+            Connect with brothers around the world. Join your country's group to access the forum and member directory.
           </p>
         </div>
 
