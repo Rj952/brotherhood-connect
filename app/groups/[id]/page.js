@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Nav from "@/app/components/Nav";
 import Footer from "@/app/components/Footer";
 
-function RichEditor({ value, onChange, placeholder }) {
+function RichEditor({ value, onChange, placeholder, editorDomRef }) {
   const editorRef = useRef(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -44,12 +44,12 @@ function RichEditor({ value, onChange, placeholder }) {
         <button type="button" onClick={() => exec("underline")} style={btnStyle} title="Underline"><u>U</u></button>
         <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
         <button type="button" onClick={() => exec("formatBlock", "H3")} style={btnStyle} title="Heading">H</button>
-        <button type="button" onClick={() => exec("insertUnorderedList")} style={btnStyle} title="Bullet List">{"\u2022"}</button>
+        <button type="button" onClick={() => exec("insertUnorderedList")} style={btnStyle} title="Bullet List">{"â¢"}</button>
         <button type="button" onClick={() => exec("insertOrderedList")} style={btnStyle} title="Numbered List">1.</button>
-        <button type="button" onClick={() => exec("formatBlock", "BLOCKQUOTE")} style={btnStyle} title="Quote">{"\u201C"}</button>
+        <button type="button" onClick={() => exec("formatBlock", "BLOCKQUOTE")} style={btnStyle} title="Quote">{"\u201c"}</button>
         <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
-        <button type="button" onClick={() => setShowLinkInput(!showLinkInput)} style={{ ...btnStyle, color: showLinkInput ? "#fff" : "#d4af37", background: showLinkInput ? "#d4af37" : "#1a1a2e" }} title="Insert Link">{"\uD83D\uDD17"}</button>
-        <button type="button" onClick={() => exec("removeFormat")} style={{ ...btnStyle, color: "#f87171" }} title="Clear Formatting">{"\u2715"}</button>
+        <button type="button" onClick={() => setShowLinkInput(!showLinkInput)} style={{ ...btnStyle, color: showLinkInput ? "#fff" : "#d4af37", background: showLinkInput ? "#d4af37" : "#1a1a2e" }} title="Insert Link">{"ð"}</button>
+        <button type="button" onClick={() => exec("removeFormat")} style={{ ...btnStyle, color: "#f87171" }} title="Clear Formatting">{"â"}</button>
       </div>
       {showLinkInput && (
         <div style={{ display: "flex", gap: 6, padding: "6px 10px", background: "#2a2a45", borderBottom: "1px solid #444" }}>
@@ -59,7 +59,7 @@ function RichEditor({ value, onChange, placeholder }) {
         </div>
       )}
       <div
-        ref={editorRef}
+        ref={(el) => { editorRef.current = el; if (editorDomRef) editorDomRef.current = el; }}
         contentEditable
         onInput={handleInput}
         onPaste={handlePaste}
@@ -116,6 +116,7 @@ export default function GroupDetail({ params }) {
   const [postingVid, setPostingVid] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState(false);
+  const postEditorRef = useRef(null);
 
   const groupId = params?.id;
   const isAdmin = user && user.role === "admin";
@@ -208,7 +209,8 @@ export default function GroupDetail({ params }) {
   };
 
   const createPost = async () => {
-    const content = newPost.trim();
+    const editorEl = postEditorRef.current;
+    const content = editorEl ? editorEl.innerHTML.trim() : newPost.trim();
     const textOnly = content.replace(/<[^>]*>/g, "").trim();
     if (!textOnly) return;
     try {
@@ -217,6 +219,7 @@ export default function GroupDetail({ params }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ groupId: groupId, content: content }),
       });
+      if (editorEl) editorEl.innerHTML = "";
       setNewPost("");
       loadPosts();
     } catch (e) {}
@@ -300,9 +303,9 @@ export default function GroupDetail({ params }) {
   };
 
   const typeIcon = (type) => {
-    if (type === "video") return "\uD83C\uDFAC";
-    if (type === "announcement") return "\uD83D\uDCE2";
-    return "\uD83D\uDCF0";
+    if (type === "video") return "ð¬";
+    if (type === "announcement") return "ð¢";
+    return "ð°";
   };
 
   const typeColor = (type) => {
@@ -374,7 +377,7 @@ export default function GroupDetail({ params }) {
             {tab === "forum" && (
               <div>
                 <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
-                  <RichEditor value={newPost} onChange={setNewPost} placeholder="Share with your brothers..." />
+                  <RichEditor value={newPost} onChange={setNewPost} placeholder="Share with your brothers..." editorDomRef={postEditorRef} />
                   <button onClick={createPost} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 10 }}>Post</button>
                 </div>
                 {posts.map(p => (
@@ -441,7 +444,7 @@ export default function GroupDetail({ params }) {
                       {isAdmin && <button onClick={() => deleteNews(n.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem" }}>Delete</button>}
                     </div>
                     <h3 style={{ margin: "8px 0 4px", color: "#e0e0e0" }}>{n.title}</h3>
-                    <p style={{ color: "#888", fontSize: "0.8rem" }}>by {n.author_name || "Administrator"} {"\u00B7"} {timeAgo(n.created_at)}</p>
+                    <p style={{ color: "#888", fontSize: "0.8rem" }}>by {n.author_name || "Administrator"} {"Â·"} {timeAgo(n.created_at)}</p>
                     <p style={{ marginTop: 8, lineHeight: 1.6 }}>{n.content}</p>
                     {getYouTubeId(n.youtube_url) && (
                       <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden" }}>
@@ -457,7 +460,7 @@ export default function GroupDetail({ params }) {
             {tab === "videos" && (
               <div>
                 <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
-                  <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>{"\uD83C\uDFAC"} Share a Video</h3>
+                  <h3 style={{ margin: "0 0 12px", color: "#e0e0e0" }}>{"ð¬"} Share a Video</h3>
                   <input value={vidTitle} onChange={e => setVidTitle(e.target.value)} placeholder="Video title" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
                   <input value={vidDesc} onChange={e => setVidDesc(e.target.value)} placeholder="Description (optional)" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 10, marginBottom: 8 }} />
                   <input value={vidUrl} onChange={e => setVidUrl(e.target.value)} placeholder="YouTube URL" style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #555", borderRadius: 8, padding: 10, marginBottom: 8 }} />
@@ -477,7 +480,7 @@ export default function GroupDetail({ params }) {
                           )}
                         </div>
                         {v.description && <p style={{ color: "#aaa", fontSize: "0.85rem", marginTop: 4 }}>{v.description}</p>}
-                        <p style={{ color: "#888", fontSize: "0.75rem", marginTop: 4 }}>by {v.poster_name || "Administrator"} {"\u00B7"} {timeAgo(v.created_at)}</p>
+                        <p style={{ color: "#888", fontSize: "0.75rem", marginTop: 4 }}>by {v.poster_name || "Administrator"} {"Â·"} {timeAgo(v.created_at)}</p>
                       </div>
                     </div>
                   ))}
