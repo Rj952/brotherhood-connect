@@ -109,10 +109,6 @@ export default function DashboardPage() {
                   <div style={{ fontSize: "2rem", marginBottom: 8 }}>{p.icon}</div>
                   <h3 style={{ color: "#d4af37", margin: "0 0 6px" }}>{p.title}</h3>
                   <p style={{ color: "#aaa", fontSize: "0.85rem", margin: "0 0 8px" }}>{p.tagline}</p>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                    <span style={{ color: "#d4af37", fontSize: "1.4rem", fontWeight: "bold" }}>{p.stat}</span>
-                    <span style={{ color: "#888", fontSize: "0.75rem" }}>{p.statLabel}</span>
-                  </div>
                 </div>
               ))}
             </div>
@@ -286,4 +282,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
