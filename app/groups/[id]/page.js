@@ -1,8 +1,95 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/app/components/Nav";
 import Footer from "@/app/components/Footer";
+
+function RichEditor({ value, onChange, placeholder }) {
+  const editorRef = useRef(null);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+
+  const exec = (cmd, val) => {
+    document.execCommand(cmd, false, val || null);
+    if (editorRef.current && onChange) onChange(editorRef.current.innerHTML);
+    editorRef.current?.focus();
+  };
+
+  const insertLink = () => {
+    if (linkUrl.trim()) {
+      exec("createLink", linkUrl.trim());
+    }
+    setLinkUrl("");
+    setShowLinkInput(false);
+  };
+
+  const handleInput = () => {
+    if (editorRef.current && onChange) onChange(editorRef.current.innerHTML);
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+  };
+
+  const btnStyle = { background: "#1a1a2e", color: "#d4af37", border: "1px solid #444", borderRadius: 4, padding: "4px 10px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "bold", minWidth: 32 };
+  const btnHover = "#333";
+
+  return (
+    <div style={{ border: "1px solid #444", borderRadius: 8, overflow: "hidden", background: "#1a1a2e" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "8px 10px", background: "#252540", borderBottom: "1px solid #444" }}>
+        <button type="button" onClick={() => exec("bold")} style={btnStyle} title="Bold"><b>B</b></button>
+        <button type="button" onClick={() => exec("italic")} style={btnStyle} title="Italic"><i>I</i></button>
+        <button type="button" onClick={() => exec("underline")} style={btnStyle} title="Underline"><u>U</u></button>
+        <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
+        <button type="button" onClick={() => exec("formatBlock", "H3")} style={btnStyle} title="Heading">H</button>
+        <button type="button" onClick={() => exec("insertUnorderedList")} style={btnStyle} title="Bullet List">{"\u2022"}</button>
+        <button type="button" onClick={() => exec("insertOrderedList")} style={btnStyle} title="Numbered List">1.</button>
+        <button type="button" onClick={() => exec("formatBlock", "BLOCKQUOTE")} style={btnStyle} title="Quote">{"\u201C"}</button>
+        <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
+        <button type="button" onClick={() => setShowLinkInput(!showLinkInput)} style={{ ...btnStyle, color: showLinkInput ? "#fff" : "#d4af37", background: showLinkInput ? "#d4af37" : "#1a1a2e" }} title="Insert Link">{"\uD83D\uDD17"}</button>
+        <button type="button" onClick={() => exec("removeFormat")} style={{ ...btnStyle, color: "#f87171" }} title="Clear Formatting">{"\u2715"}</button>
+      </div>
+      {showLinkInput && (
+        <div style={{ display: "flex", gap: 6, padding: "6px 10px", background: "#2a2a45", borderBottom: "1px solid #444" }}>
+          <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && insertLink()} placeholder="https://example.com" style={{ flex: 1, background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #555", borderRadius: 4, padding: "4px 8px", fontSize: "0.85rem" }} />
+          <button type="button" onClick={insertLink} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", borderRadius: 4, padding: "4px 12px", fontWeight: "bold", cursor: "pointer", fontSize: "0.85rem" }}>Add</button>
+          <button type="button" onClick={() => { setShowLinkInput(false); setLinkUrl(""); }} style={{ background: "transparent", color: "#888", border: "1px solid #555", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: "0.85rem" }}>Cancel</button>
+        </div>
+      )}
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={handleInput}
+        onPaste={handlePaste}
+        data-placeholder={placeholder || "Write something..."}
+        style={{
+          minHeight: 120,
+          maxHeight: 400,
+          overflowY: "auto",
+          padding: 12,
+          color: "#e0e0e0",
+          lineHeight: 1.6,
+          outline: "none",
+          fontSize: "0.95rem",
+        }}
+      ></div>
+      <style>{`
+        [contenteditable]:empty:before {
+          content: attr(data-placeholder);
+          color: #666;
+          pointer-events: none;
+        }
+        [contenteditable] h3 { color: #d4af37; margin: 8px 0 4px; font-size: 1.1rem; }
+        [contenteditable] blockquote { border-left: 3px solid #d4af37; margin: 8px 0; padding-left: 12px; color: #aaa; font-style: italic; }
+        [contenteditable] a { color: #60a5fa; text-decoration: underline; }
+        [contenteditable] ul, [contenteditable] ol { padding-left: 24px; margin: 4px 0; }
+        [contenteditable] li { margin-bottom: 2px; }
+      `}</style>
+    </div>
+  );
+}
 
 export default function GroupDetail({ params }) {
   const router = useRouter();
@@ -121,12 +208,14 @@ export default function GroupDetail({ params }) {
   };
 
   const createPost = async () => {
-    if (!newPost.trim()) return;
+    const content = newPost.trim();
+    const textOnly = content.replace(/<[^>]*>/g, "").trim();
+    if (!textOnly) return;
     try {
       await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId: groupId, content: newPost }),
+        body: JSON.stringify({ groupId: groupId, content: content }),
       });
       setNewPost("");
       loadPosts();
@@ -234,6 +323,15 @@ export default function GroupDetail({ params }) {
     } catch (e) { return ""; }
   };
 
+  const renderPostContent = (content) => {
+    if (!content) return null;
+    const hasHtml = /<[a-z][\s\S]*>/i.test(content);
+    if (hasHtml) {
+      return <div style={{ marginTop: 8, lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: content }} />;
+    }
+    return <p style={{ marginTop: 8, lineHeight: 1.5 }}>{content}</p>;
+  };
+
   if (loading) return <div style={{ minHeight: "100vh", background: "#1a1a2e", color: "#d4af37", display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
 
   if (pageError) return (
@@ -276,8 +374,8 @@ export default function GroupDetail({ params }) {
             {tab === "forum" && (
               <div>
                 <div style={{ background: "#252540", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #333" }}>
-                  <textarea value={newPost} onChange={e => setNewPost(e.target.value)} placeholder="Share with your brothers..." rows={3} style={{ width: "100%", background: "#1a1a2e", color: "#e0e0e0", border: "1px solid #444", borderRadius: 8, padding: 12, resize: "vertical" }} />
-                  <button onClick={createPost} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 8 }}>Post</button>
+                  <RichEditor value={newPost} onChange={setNewPost} placeholder="Share with your brothers..." />
+                  <button onClick={createPost} style={{ background: "#d4af37", color: "#1a1a2e", border: "none", padding: "8px 20px", borderRadius: 8, fontWeight: "bold", cursor: "pointer", marginTop: 10 }}>Post</button>
                 </div>
                 {posts.map(p => (
                   <div key={p.id} style={{ background: "#252540", borderRadius: 12, padding: 16, marginBottom: 12, border: "1px solid #333" }}>
@@ -285,7 +383,14 @@ export default function GroupDetail({ params }) {
                       <strong style={{ color: "#d4af37" }}>{p.author_name || "Member"}</strong>
                       <span style={{ color: "#888", fontSize: "0.8rem" }}>{timeAgo(p.created_at)}</span>
                     </div>
-                    <p style={{ marginTop: 8, lineHeight: 1.5 }}>{p.content}</p>
+                    {renderPostContent(p.content)}
+                    <style>{`
+                      .post-content h3 { color: #d4af37; margin: 8px 0 4px; font-size: 1.1rem; }
+                      .post-content blockquote { border-left: 3px solid #d4af37; margin: 8px 0; padding-left: 12px; color: #aaa; font-style: italic; }
+                      .post-content a { color: #60a5fa; text-decoration: underline; }
+                      .post-content ul, .post-content ol { padding-left: 24px; margin: 4px 0; }
+                      .post-content li { margin-bottom: 2px; }
+                    `}</style>
                     <button onClick={() => loadReplies(p.id)} style={{ background: "transparent", border: "none", color: "#d4af37", cursor: "pointer", fontSize: "0.85rem", marginTop: 8 }}>
                       {expandedPost === p.id ? "Hide Replies" : "Replies (" + (p.reply_count || 0) + ")"}
                     </button>
@@ -336,7 +441,7 @@ export default function GroupDetail({ params }) {
                       {isAdmin && <button onClick={() => deleteNews(n.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem" }}>Delete</button>}
                     </div>
                     <h3 style={{ margin: "8px 0 4px", color: "#e0e0e0" }}>{n.title}</h3>
-                    <p style={{ color: "#888", fontSize: "0.8rem" }}>by {n.author_name || "Administrator"} \u00B7 {timeAgo(n.created_at)}</p>
+                    <p style={{ color: "#888", fontSize: "0.8rem" }}>by {n.author_name || "Administrator"} {"\u00B7"} {timeAgo(n.created_at)}</p>
                     <p style={{ marginTop: 8, lineHeight: 1.6 }}>{n.content}</p>
                     {getYouTubeId(n.youtube_url) && (
                       <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden" }}>
@@ -393,7 +498,7 @@ export default function GroupDetail({ params }) {
                     </div>
                   </div>
                 ))}
-              </div>
+                          </div>
             )}
           </>
         )}
