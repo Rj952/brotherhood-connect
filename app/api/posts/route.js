@@ -10,10 +10,10 @@ export async function GET(req) {
     const groupId = searchParams.get("groupId");
     if (!groupId) return NextResponse.json({ error: "groupId required" }, { status: 400 });
     const { rows } = await sql`
-      SELECT p.*, u.name as author_name,
+      SELECT p.*, COALESCE(u.name, 'Administrator') as author_name,
         (SELECT COUNT(*) FROM replies r WHERE r.post_id = p.id) as reply_count
       FROM posts p
-      JOIN users u ON u.id = p.user_id
+      LEFT JOIN users u ON u.id = p.user_id
       WHERE p.group_id = ${groupId}
       ORDER BY p.created_at DESC
     `;
