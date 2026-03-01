@@ -44,12 +44,12 @@ function RichEditor({ value, onChange, placeholder, editorDomRef }) {
         <button type="button" onClick={() => exec("underline")} style={btnStyle} title="Underline"><u>U</u></button>
         <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
         <button type="button" onClick={() => exec("formatBlock", "H3")} style={btnStyle} title="Heading">H</button>
-        <button type="button" onClick={() => exec("insertUnorderedList")} style={btnStyle} title="Bullet List">{"â¢"}</button>
+        <button type="button" onClick={() => exec("insertUnorderedList")} style={btnStyle} title="Bullet List">{"•"}</button>
         <button type="button" onClick={() => exec("insertOrderedList")} style={btnStyle} title="Numbered List">1.</button>
         <button type="button" onClick={() => exec("formatBlock", "BLOCKQUOTE")} style={btnStyle} title="Quote">{"\u201c"}</button>
         <span style={{ borderLeft: "1px solid #444", margin: "0 4px" }}></span>
         <button type="button" onClick={() => setShowLinkInput(!showLinkInput)} style={{ ...btnStyle, color: showLinkInput ? "#fff" : "#d4af37", background: showLinkInput ? "#d4af37" : "#1a1a2e" }} title="Insert Link">{"ð"}</button>
-        <button type="button" onClick={() => exec("removeFormat")} style={{ ...btnStyle, color: "#f87171" }} title="Clear Formatting">{"â"}</button>
+        <button type="button" onClick={() => exec("removeFormat")} style={{ ...btnStyle, color: "#f87171" }} title="Clear Formatting">{"✕"}</button>
       </div>
       {showLinkInput && (
         <div style={{ display: "flex", gap: 6, padding: "6px 10px", background: "#2a2a45", borderBottom: "1px solid #444" }}>
