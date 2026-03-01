@@ -1,4 +1,4 @@
-const CACHE_NAME = "brotherhood-v1";
+const CACHE_NAME = "brotherhood-v2";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
@@ -30,6 +30,11 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // Skip caching for API routes - always fetch from network
+  if (event.request.url.includes("/api/")) {
+    return;
+  }
+
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() => {
