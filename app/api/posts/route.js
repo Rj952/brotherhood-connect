@@ -45,3 +45,19 @@ export async function POST(req) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  try {
+    const user = await getSession();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const { searchParams } = new URL(req.url);
+    const postId = searchParams.get("postId");
+    if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 });
+    await sql`DELETE FROM replies WHERE post_id = ${postId}`;
+    await sql`DELETE FROM posts WHERE id = ${postId}`;
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
