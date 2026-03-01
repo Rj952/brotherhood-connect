@@ -13,7 +13,7 @@ export async function GET() {
   return NextResponse.json({ codes });
 }
 
-// POST /api/admin/codes â generate a new code
+// POST /api/admin/codes — generate a new code
 export async function POST() {
   const session = await getSession();
   if (!session || session.role !== "admin") {
@@ -30,7 +30,7 @@ export async function POST() {
   }
 }
 
-// DELETE /api/admin/codes â delete a code
+// DELETE /api/admin/codes — delete a code
 export async function DELETE(request) {
   const session = await getSession();
   if (!session || session.role !== "admin") {
