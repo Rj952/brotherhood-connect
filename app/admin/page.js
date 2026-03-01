@@ -108,7 +108,7 @@ export default function AdminPage() {
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">{u.email}</div>
                   <div className="text-[11px] text-gray-600 mt-1">
-                    Registered: {new Date(u.created_at).toLocaleDateString()} â¢ Ref: {u.invited_by}
+                    Registered: {new Date(u.created_at).toLocaleDateString()} • Ref: {u.invited_by}
                     {u.reason && <><br />Reason: &quot;{u.reason}&quot;</>}
                   </div>
                 </div>
@@ -117,11 +117,11 @@ export default function AdminPage() {
                     <>
                       <button onClick={() => updateStatus(u.id, "approved")}
                         className="px-3.5 py-1.5 text-xs font-semibold rounded-md cursor-pointer bg-green-900/20 text-green-300 border border-green-800/20 hover:bg-green-700 hover:text-white transition-all">
-                        â Approve
+                        ✓ Approve
                       </button>
                       <button onClick={() => updateStatus(u.id, "denied")}
                         className="px-3.5 py-1.5 text-xs font-semibold rounded-md cursor-pointer bg-red-900/20 text-red-300 border border-red-800/20 hover:bg-red-600 hover:text-white transition-all">
-                        â Deny
+                        ✕ Deny
                       </button>
                     </>
                   )}
@@ -163,8 +163,8 @@ export default function AdminPage() {
                   <div className="text-[11px] text-gray-600 mt-1.5">
                     Created: {new Date(c.created_at).toLocaleDateString()}
                     {c.used
-                      ? <span className="text-green-400 ml-2">â¢ Used by {c.used_by}</span>
-                      : <span className="text-gold ml-2">â¢ Available</span>
+                      ? <span className="text-green-400 ml-2">• Used by {c.used_by}</span>
+                      : <span className="text-gold ml-2">• Available</span>
                     }
                   </div>
                 </div>
