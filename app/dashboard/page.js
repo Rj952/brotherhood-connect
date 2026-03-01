@@ -127,7 +127,7 @@ export default function DashboardPage() {
 
               {!feedError && feedNews.length > 0 && (
                 <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ color: "#e0e0e0", fontSize: "1rem", marginBottom: 12 }}>\ud83d\udcf0 News Updates</h3>
+                  <h3 style={{ color: "#e0e0e0", fontSize: "1rem", marginBottom: 12 }}>📰 News Updates</h3>
                   <div style={{ background: "#252540", borderRadius: 12, border: "1px solid #333", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
               {!feedError && feedVideos.length > 0 && (
                 <div>
-                  <h3 style={{ color: "#e0e0e0", fontSize: "1rem", marginBottom: 12 }}>\ud83c\udfac Shared Videos</h3>
+                  <h3 style={{ color: "#e0e0e0", fontSize: "1rem", marginBottom: 12 }}>🎬 Shared Videos</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
                     {feedVideos.slice(0, 6).map((v, idx) => {
                       const ytId = getYouTubeId(v?.youtube_url);
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                           )}
                           <div style={{ padding: 10 }}>
                             <h4 style={{ margin: 0, color: "#e0e0e0", fontSize: "0.85rem" }}>{v?.title || "Untitled"}</h4>
-                            <p style={{ color: "#888", fontSize: "0.75rem", margin: "4px 0 0" }}>{v?.group_name || ""} \u00b7 {v?.poster_name || "Member"} \u00b7 {timeAgo(v?.created_at)}</p>
+                            <p style={{ color: "#888", fontSize: "0.75rem", margin: "4px 0 0" }}>{v?.group_name || ""} · {v?.poster_name || "Member"} · {timeAgo(v?.created_at)}</p>
                           </div>
                         </div>
                       );
@@ -188,7 +188,7 @@ export default function DashboardPage() {
 
         {selectedPillar && pillar && (
           <div>
-            <button onClick={() => setSelectedPillar(null)} style={{ background: "transparent", border: "none", color: "#d4af37", cursor: "pointer", marginBottom: 16, fontSize: "0.9rem" }}>\u2190 Back to Pillars</button>
+            <button onClick={() => setSelectedPillar(null)} style={{ background: "transparent", border: "none", color: "#d4af37", cursor: "pointer", marginBottom: 16, fontSize: "0.9rem" }}>← Back to Pillars</button>
 
             <div style={{ background: pillar.gradient || "#252540", borderRadius: 16, padding: "28px 24px", marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -216,8 +216,8 @@ export default function DashboardPage() {
                 width: "100%", background: "transparent", border: "none", padding: "16px 20px",
                 display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer"
               }}>
-                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>\ud83d\udcda Research Findings ({pillar.research?.length || 0})</h3>
-                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.research ? "\u25b2" : "\u25bc"}</span>
+                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>📚 Research Findings ({pillar.research?.length || 0})</h3>
+                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.research ? "▲" : "▼"}</span>
               </button>
               {expandedSections.research && pillar.research && (
                 <div style={{ padding: "0 20px 16px" }}>
@@ -237,8 +237,8 @@ export default function DashboardPage() {
                 width: "100%", background: "transparent", border: "none", padding: "16px 20px",
                 display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer"
               }}>
-                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>\u2705 Wellness Practices ({pillar.practices?.length || 0})</h3>
-                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.practices ? "\u25b2" : "\u25bc"}</span>
+                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>✅ Wellness Practices ({pillar.practices?.length || 0})</h3>
+                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.practices ? "▲" : "▼"}</span>
               </button>
               {expandedSections.practices && pillar.practices && (
                 <div style={{ padding: "0 20px 16px" }}>
@@ -267,8 +267,8 @@ export default function DashboardPage() {
                 width: "100%", background: "transparent", border: "none", padding: "16px 20px",
                 display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer"
               }}>
-                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>\ud83d\udcad Reflection Question</h3>
-                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.reflection ? "\u25b2" : "\u25bc"}</span>
+                <h3 style={{ color: "#d4af37", margin: 0, fontSize: "1.1rem" }}>💭 Reflection Question</h3>
+                <span style={{ color: "#d4af37", fontSize: "1.2rem" }}>{expandedSections.reflection ? "▲" : "▼"}</span>
               </button>
               {expandedSections.reflection && (
                 <div style={{ padding: "0 20px 16px" }}>
@@ -286,3 +286,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
