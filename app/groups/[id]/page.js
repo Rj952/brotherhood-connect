@@ -263,6 +263,14 @@ export default function GroupDetail({ params }) {
     setPostingNews(false);
   };
 
+  const deletePost = async (postId) => {
+    if (!confirm("Delete this post?")) return;
+    try {
+      await fetch("/api/posts?postId=" + postId, { method: "DELETE" });
+      loadPosts();
+    } catch (e) {}
+  };
+
   const deleteNews = async (newsId) => {
     if (!confirm("Delete this news item?")) return;
     try {
@@ -382,9 +390,12 @@ export default function GroupDetail({ params }) {
                 </div>
                 {posts.map(p => (
                   <div key={p.id} style={{ background: "#252540", borderRadius: 12, padding: 16, marginBottom: 12, border: "1px solid #333" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong style={{ color: "#d4af37" }}>{p.author_name || "Member"}</strong>
-                      <span style={{ color: "#888", fontSize: "0.8rem" }}>{timeAgo(p.created_at)}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ color: "#888", fontSize: "0.8rem" }}>{timeAgo(p.created_at)}</span>
+                        {isAdmin && <button onClick={() => deletePost(p.id)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem" }}>Delete</button>}
+                      </div>
                     </div>
                     {renderPostContent(p.content)}
                     <style>{`
