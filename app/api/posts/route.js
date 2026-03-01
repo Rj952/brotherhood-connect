@@ -19,7 +19,9 @@ export async function GET(req) {
       WHERE p.group_id = ${groupId}
       ORDER BY p.created_at DESC
     `;
-    return NextResponse.json({ posts: rows });
+    const response = NextResponse.json({ posts: rows });
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    return response;
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
