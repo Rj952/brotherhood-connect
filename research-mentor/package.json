@@ -1,0 +1,18 @@
+{
+  "name": "research-mentor",
+  "version": "1.0.0",
+  "description": "An AI research mentor that gives students feedback on their research topic, proposal and paradigm alignment",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}
