@@ -50,7 +50,7 @@ export async function POST(req) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { mode, details = {}, history = [], accessCode } = body;
+  const { mode, details = {}, history = [], accessCode } = body ?? {};
 
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     return NextResponse.json({ error: "The mentor isn't configured yet: set ANTHROPIC_API_KEY on the server." }, { status: 500 });
@@ -62,11 +62,15 @@ export async function POST(req) {
   if (!MODE_IDS.includes(mode)) {
     return NextResponse.json({ error: "Unknown feedback type" }, { status: 400 });
   }
+  if (!details || typeof details !== "object" || Array.isArray(details)) {
+    return NextResponse.json({ error: "Invalid submission" }, { status: 400 });
+  }
+  const text = (key) => (typeof details[key] === "string" ? details[key].trim() : "");
   const values = Object.values(details).filter((v) => typeof v === "string");
   if (values.some((v) => v.length > MAX_FIELD_CHARS) || values.join("").length > MAX_TOTAL_CHARS) {
     return NextResponse.json({ error: "Submission is too long — trim it or send one section at a time." }, { status: 400 });
   }
-  if (!details.title?.trim() && !details.proposal?.trim() && !details.questions?.trim()) {
+  if (!text("title") && !text("proposal") && !text("questions")) {
     return NextResponse.json({ error: "Add at least a topic, research questions or proposal text." }, { status: 400 });
   }
   const historyError = validateHistory(history);
